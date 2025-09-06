@@ -1,16 +1,24 @@
-# Django + PostgreSQL + Nginx (Docker)
+# Terraform AWS Infrastructure — Lesson 5
 
-Структура проекту та інструкції для локального запуску.
+This project provisions basic AWS infrastructure using Terraform with modular structure and remote state backend.
 
-Try it:
+## 📁 Project Structure
 
-1. Build and run containers:
+```
+lesson-5/
+├── backend.tf             # S3 + DynamoDB backend configuration
+├── main.tf                # Module connections
+├── modules/
+│ ├── s3-backend/          # Remote state backend (S3 + DynamoDB)
+│ ├── vpc/                 # Network infrastructure
+│ └── ecr/                 # Docker image repository (ECR)
+```
 
-   docker-compose up --build -d
+## ⚙️ Terraform Commands
 
-2. Apply migrations and create superuser:
-
-   docker-compose exec web python manage.py migrate
-   docker-compose exec web python manage.py createsuperuser
-
-3. Open http://localhost
+```bash
+terraform init
+terraform plan
+terraform apply
+terraform destroy
+```
