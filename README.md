@@ -40,7 +40,6 @@ Repository layout (relevant parts):
 1) Terraform apply (in `lesson-7/`):
 
 ```bash
-cd lesson-7
 terraform init
 terraform plan
 terraform apply -auto-approve
@@ -126,3 +125,63 @@ resource "aws_eks_node_group" "workers" {
 If you want, I can:
 - add the example `aws_eks_node_group` and required IAM resources to the EKS module now, or
 - create a GitHub Actions workflow to build/push the image and deploy the Helm chart automatically.
+
+## How to apply Terraform (CI or locally)
+
+To provision infrastructure from `lesson-7/` locally:
+
+```bash
+cd lesson-7
+terraform init
+terraform plan -out=plan.tfplan
+terraform apply "plan.tfplan"
+```
+
+Notes:
+- Use `-auto-approve` for non-interactive runs in CI.
+- Keep sensitive values (AWS credentials, tfvars) out of the repo. Use `credentials.auto.tfvars` or environment variables and include them in `.gitignore`.
+
+## How to check Jenkins job
+
+If you use Jenkins for CI (build/push image, or run Terraform), follow these steps:
+
+1. Open Jenkins UI in your browser (example: `https://jenkins.example.com`).
+2. Locate the job/pipeline (name depends on your setup, e.g. `lesson-7-build-and-deploy`).
+3. Click the latest build and open `Console Output` to see logs for build, docker push, terraform apply, or helm deploy.
+4. Check build artifacts and environment variables in the job configuration if something fails.
+
+Common checks:
+- Build step: successful `docker build` and `docker push` to ECR.
+- Terraform step: successful `terraform apply` and outputs printed (ECR repo url, cluster name).
+- Helm step: `helm upgrade --install` logs and success exit code.
+
+If Jenkins is configured to run Terraform, ensure Jenkins has AWS credentials with proper IAM permissions. For troubleshooting, re-run the job with full console logging.
+
+## How to see the result in Argo CD
+
+If you deploy applications with Argo CD, verify the app state:
+
+1. Open Argo CD UI (example: `https://argocd.example.com`) and log in.
+2. Find the application (name used when creating the App resource) in the Applications list.
+3. Check the app status: `Synced` and `Healthy` are desired.
+4. If out-of-sync, click `Sync` to apply manifests from the Git repository.
+5. Use the `App` view to inspect Kubernetes resources (Deployment, Service, HPA, ConfigMap).
+
+Argo CD CLI quick checks:
+
+```bash
+# login with CLI (if needed)
+argocd login <argocd-server> --username <user> --password <pass>
+
+# list apps
+argocd app list
+
+# get app status
+argocd app get <app-name>
+
+# sync app
+argocd app sync <app-name>
+```
+
+When the app is `Synced` and resources are `Healthy`, open the external service IP (LoadBalancer) to see the running application.
+
