@@ -1,0 +1,130 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+env/
+.env
+pip-log.txt
+htmlcov/
+.tox/
+
+# Go
+bin/
+pkg/
+*.exe
+*.exe~
+*.test
+
+# Java / Maven / Gradle
+target/
+*.class
+*.jar
+*.war
+*.ear
+.gradle/
+build/
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+*.tfplan
+
+# Sensitive terraform files
+credentials.auto.tfvars
+*.auto.tfvars
+
+# AWS credentials
+.aws/credentials
+.aws/config
+aws_credentials
+credentials
+
+# Ansible
+*.retry
+vault_password.txt
+host_vars/
+group_vars/
+
+# Docker
+docker-compose.override.yml
+docker-compose.*.local.yml
+*.compose.local.yml
+*.env
+
+# Kubernetes / Helm
+.kube/
+.kubeconfig
+*.kubeconfig
+.helm/
+helmfile.lock
+
+# GitHub Actions / CI
+.github/workflows/
+
+# Logs, archives, temp
+*.log
+*.tmp
+*.bak
+*.backup
+*.swp
+*.pid
+*.seed
+
+# Keys & secrets
+*.pem
+*.key
+*.crt
+id_rsa
+id_rsa.pub
+*.p12
+*.jks
+secrets.yml
+credentials
+.env.*.local
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+
+# Ignore build and distribution folders
+dist/
+build/
+release/
+*.zip
+*.tar.gz
+*.tgz
