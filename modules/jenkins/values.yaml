@@ -1,0 +1,95 @@
+controller:
+  javaOpts: "-Duser.language=en -Duser.country=US"
+
+  admin:                      # облікові дані адміністратора Jenkins
+    username: admin
+    password: admin123
+
+  serviceType: LoadBalancer   # створює зовнішній доступ до Jenkins через публічний IP
+  servicePort: 80
+  service:
+    port: 80
+    targetPort: 8080
+
+  resources:                  # обмеження та запити ресурсів для Jenkins-пода
+    limits:
+      cpu: "500m"
+      memory: "1Gi"
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+
+  persistentVolume:           # збереження даних Jenkins
+    enabled: true
+    storageClass: 'ebs-sc'
+    size: 10Gi
+
+  installPlugins:
+    - kubernetes:latest               # дозволяє Jenkins створювати динамічні агенти (Pod-и) у Kubernetes
+    - workflow-aggregator:latest      # набір плагінів для роботи з Pipeline-as-Code. Дозволяє писати Jenkinsfile
+    - git:latest                      # інтеграція з Git-репозиторіями. Потрібен для клонування проєктів
+    - configuration-as-code:latest    # дозволяє керувати конфігурацією Jenkins у вигляді YAML
+    - credentials-binding:latest      # дозволяє безпечно використовувати змінні середовища для токенів, паролів тощо у пайплайнах
+    - github:latest                   # інтеграція з GitHub: webhooks, OAuth, pull request’и, репозиторії
+    - docker-plugin:latest
+    - docker-workflow:latest
+    - job-dsl:latest
+
+  serviceAccount:
+     name: jenkins-sa
+     create: false
+
+  JCasC:
+    configScripts:
+      credentials: |
+        credentials:
+          system:
+            domainCredentials:
+              - credentials:
+                  - usernamePassword:
+                      scope: GLOBAL
+                      id: github-token
+                      username: ${github_user}
+                      password: ${github_pat}
+                      description: GitHub PAT
+      seed-job: |
+        jobs:
+          - script: >
+              job('seed-job') {
+                description('Job to generate pipeline for Django project')
+                scm {
+                  git {
+                    remote {
+                      url('${github_repo_url}')
+                      credentials('github-token')
+                    }
+                    branches('*/${github_branch}')
+                  }
+                }
+                steps {
+                  dsl {
+                    text('''
+                      pipelineJob("goit-django-docker") {                        
+                        triggers {
+                          githubPush()
+                          // pollSCM('H/3 * * * *') 
+                        }
+                        definition {
+                          cpsScm {
+                            scm {
+                              git {
+                                remote {
+                                  url('${github_repo_url}')
+                                  credentials("github-token")
+                                }
+                                branches('*/${github_branch}')
+                              }
+                            }
+                            scriptPath('${jenkinsfile_dir}Jenkinsfile')
+                          }
+                        }
+                      }
+                    ''')
+                  }
+                }
+              }

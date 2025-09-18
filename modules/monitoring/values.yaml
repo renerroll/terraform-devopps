@@ -1,0 +1,15 @@
+prometheus:
+  prometheusSpec:
+    retention: '5d'
+    storageSpec:
+     volumeClaimTemplate:
+       spec:
+         resources:
+           requests:
+             storage: 10Gi
+
+grafana:
+  adminPassword: 'admin123'
+  service:
+    type: LoadBalancer
+
