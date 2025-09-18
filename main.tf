@@ -1,7 +1,6 @@
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
       version = ">= 4.0.0"
     }
     helm = {
@@ -49,12 +48,12 @@ module "eks" {
   cluster_name    = "eks-cluster-alx"             # Cluster name
   eks_ui_username = "root"
   subnet_ids      = module.vpc.public_subnets     # Subnet IDs
-  instance_type   = "t3.medium"                   # Instance type
+  instance_type   = "t3.small"                   # Instance type (balanced performance/cost)
   capacity_type   = "ON_DEMAND"                   # Instance capacity type
-  ami_type        = "AL2023_x86_64_STANDARD"      # AMI type
+  ami_type        = "AL2023_x86_64_STANDARD"     # AMI type (latest supported)
   desired_size    = 2                             # Desired number of nodes
   max_size        = 3                             # Maximum number of nodes
-  min_size        = 2                             # Minimum number of nodes
+  min_size        = 1                             # Minimum number of nodes
 }
 
 data "aws_eks_cluster" "eks" {                    # дозволяє Terraform отримати інформацію про створений кластер EKS
@@ -122,49 +121,49 @@ module "argo_cd" {
   depends_on    = [module.eks]
 }
 
-module "rds" {
-  source = "./modules/rds"
+# RDS disabled for testing - uncomment when needed
+# module "rds" {
+#   source = "./modules/rds"
 
-  name                       = "django-db"
-  use_aurora                 = true
-  aurora_instance_count      = 2
-  vpc_cidr_block             = module.vpc.vpc_cidr_block
+#   name                       = "django-db"
+#   use_aurora                 = true
+#   aurora_instance_count      = 2
+#   vpc_cidr_block             = module.vpc.vpc_cidr_block
 
-  # --- Aurora-only ---
-  engine_cluster             = "aurora-postgresql"
-  engine_version_cluster     = "15.3"
-  parameter_group_family_aurora = "aurora-postgresql15"
+#   # --- Aurora-only ---
+#   engine_cluster             = "aurora-postgresql"
+#   engine_version_cluster     = "15.3"
+#   parameter_group_family_aurora = "aurora-postgresql15"
 
-  # --- RDS-only ---
-  engine                     = "postgres"
-  engine_version             = "17.2"
-  parameter_group_family_rds = "postgres17"
+#   # --- RDS-only ---
+#   engine                     = "postgres"
+#   engine_version             = "17.2"
+#   parameter_group_family_rds = "postgres17"
 
-  # Common
-  instance_class             = "db.t3.medium"
-  allocated_storage          = 20
-  db_name                    = "django_db"
-  username                   = "django_user"
-  password                   = "admin123"
-  subnet_private_ids         = module.vpc.private_subnets
-  subnet_public_ids          = module.vpc.public_subnets
-  publicly_accessible        = true
-  vpc_id                     = module.vpc.vpc_id
-  multi_az                   = true
-  backup_retention_period    = 7
-  parameters = {
-    max_connections              = "200"
-    log_min_duration_statement   = "500"
-  }
+#   # Common
+#   instance_class             = "db.t3.medium"
+#   allocated_storage          = 20
+#   db_name                    = "django_db"
+#   username                   = "django_user"
+#   password                   = "admin123"
+#   subnet_private_ids         = module.vpc.private_subnets
+#   subnet_public_ids          = module.vpc.public_subnets
+#   publicly_accessible        = true
+#   vpc_id                     = module.vpc.vpc_id
+#   multi_az                   = true
+#   backup_retention_period    = 7
+#   parameters = {
+#     max_connections              = "200"
+#     log_min_duration_statement   = "500"
+#   }
 
-  tags = {
-    Environment = "dev"
-    Project     = "django_db"
-  }
-  depends_on = [
-    module.vpc
-  ]
-
-}
+#   tags = {
+#     Environment = "dev"
+#     Project     = "django_db"
+#   }
+#   depends_on = [
+#     module.vpc
+#   ]
+# }
 
 

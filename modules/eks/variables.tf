@@ -20,7 +20,7 @@ variable "node_group_name" {
 
 variable "instance_type" {
   description = "EC2 instance type for the worker nodes"
-  default     = "t3.medium"
+  default     = "t2.micro"
 }
 
 variable "capacity_type" {
@@ -30,7 +30,7 @@ variable "capacity_type" {
 
 variable "ami_type" {
   description = "EC2 instance AMI type"
-  default     = "AL2023_x86_64_STANDARD"
+  default     = "AL2_x86_64"
 }
 
 variable "desired_size" {

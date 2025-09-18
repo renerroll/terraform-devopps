@@ -99,11 +99,11 @@ output "admin_password" {
   value = module.argo_cd.admin_password
 }
 
-#-------------RDS-----------------
+#-------------RDS (disabled)-----------------
 
-output "rds_endpoint" {
-  value = module.rds.rds_endpoint
-}
+# output "rds_endpoint" {
+#   value = module.rds.rds_endpoint
+# }
 
 #-------------monitoring-----------------
 
