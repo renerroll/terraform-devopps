@@ -1,376 +1,213 @@
-# Microservice project - Terraform, Kubernetes, Helm, Jenkins, Argo CD, RDS, Aurora, Prometheus, Grafana
+# DevOps Infrastructure Project
 
-This project provide basic AWS infrastructure using Terraform with modular structure and remote state backend.
+Complete DevOps infrastructure deployment using Terraform, Kubernetes (EKS), CI/CD pipelines, and monitoring stack.
+
+## Project Architecture
+
+This project deploys a full DevOps infrastructure on AWS with:
+- **EKS Cluster** - Kubernetes cluster with worker nodes
+- **VPC & Networking** - Secure network infrastructure
+- **ECR Repository** - Docker image registry
+- **CI/CD Pipeline** - Jenkins for automated deployments
+- **GitOps** - ArgoCD for application management
+- **Monitoring** - Prometheus & Grafana for metrics and alerting
+- **Custom Django App** - Sample application deployment
 
 ## Project Structure
 
 ```
 ├── backend.tf             # S3 + DynamoDB backend configuration
-├── main.tf                # Main entry point to invoke modules
+├── main.tf                # Main Terraform configuration
+├── variables.tf           # Input variables
+├── outputs.tf             # Output values
+├── terraform.tfvars       # Variable values
 ├── Jenkinsfile            # CI pipeline definition
-├── django/                # Application for image building
+├── assets/                # Screenshots and documentation
+├── django/                # Django application source code
 ├── modules/               # Terraform modules
-│ ├── s3-backend/          # Remote state backend (S3 + DynamoDB) module
-│ ├── vpc/                 # Network infrastructure (VPC) module
-│ ├── rds/                 # RDS/Aurora database configuration
-│ ├── ecr/                 # Docker image repository (ECR) module
-│ ├── eks/                 # Kubernetes cluster (EKS) module
+│ ├── s3-backend/          # Remote state backend
+│ ├── vpc/                 # Network infrastructure
+│ ├── ecr/                 # Docker image repository
+│ ├── eks/                 # Kubernetes cluster
 │ ├── monitoring/          # Prometheus and Grafana 
-│ ├── jenkins/             # Jenkins Helm deployment + config
-│ └── argo_cd/             # Argo CD Helm deployment + Application management
-├── charts/                # Helm charts
+│ ├── jenkins/             # Jenkins deployment
+│ └── argo_cd/             # ArgoCD GitOps
+└── charts/                # Helm charts for applications
 ```
 
+## Prerequisites
 
+- AWS CLI configured with appropriate permissions
+- Docker Desktop installed and running
+- kubectl installed
+- Helm installed
+- Terraform installed
 
-## Cloning the Repository
-1. Clone the repo
-```shell
+## Quick Start
+
+### 1. Clone and Setup
+```bash
 git clone <repository-url>
+cd devops
 ```
 
-2. Checkout branch `final-project`
-```shell
-git checkout final-project
-```
-
-## AWS Configuration
-
+### 2. Configure AWS
 ```bash
 aws configure
 # Enter your AWS credentials
 ```
----
 
-## Preparing the Backend (S3 + DynamoDB)
-
-Before you start, you need to create the backend to store the Terraform state (terraform.tfstate) and to enable locking to prevent conflicts during team collaboration.
-To do this:
-
-1. Navigate to the `s3-backend` folder:
-
+### 3. Create S3 Backend (First Time Only)
 ```bash
-cd s3-backend
+cd modules/s3-backend
+terraform init
+terraform apply
+cd ../..
 ```
 
-2. Initialize Terraform, review the plan, and create the backend resources:
-
+### 4. Deploy Infrastructure
 ```bash
 terraform init
 terraform plan
 terraform apply
 ```
 
-This will create:
-
-- An S3 bucket to store the state
-- A DynamoDB table for state locking
-
----
-
-## Creating the Infrastructure
-
-After the backend is created, return to the root folder with the main Terraform configuration and run the standard commands to create the infrastructure.
-
-It is recommended to comment out the s3_backend creation block in main.tf and the output data of this module in outputs.tf before this.
-
-Initialize Terraform:
-
+### 5. Configure kubectl
 ```bash
-terraform init
+aws eks update-kubeconfig --region eu-west-1 --name eks-cluster-alx
 ```
 
-Review the changes:
+## 🚀 Deployed Components
+
+### Django Application
+Build and deploy custom Django application:
 
 ```bash
-terraform plan
+# Navigate to Django app directory
+cd django
+
+# Build Docker image
+docker build --platform linux/amd64 -t django-app .
+
+# Tag for ECR
+docker tag django-app:latest 111924087894.dkr.ecr.eu-west-1.amazonaws.com/ecr-alx:v1.0.3
+
+# Push to ECR
+docker push 111924087894.dkr.ecr.eu-west-1.amazonaws.com/ecr-alx:v1.0.3
+
+# Deploy using kubectl
+kubectl create deployment django-simple --image=111924087894.dkr.ecr.eu-west-1.amazonaws.com/ecr-alx:v1.0.3
+kubectl expose deployment django-simple --type=LoadBalancer --port=80 --target-port=8000
+
+# Access via port-forward for testing
+kubectl port-forward deployment/django-simple 8000:8000
 ```
 
-Apply the changes:
-
+### Jenkins CI/CD
+Access Jenkins dashboard:
 ```bash
-terraform apply
+kubectl get svc -n jenkins
+# Open LoadBalancer EXTERNAL-IP in browser
+
+# Get admin password
+kubectl get secret jenkins -n jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode && echo
+# Username: admin
 ```
 
-View the outputs:
+### ArgoCD GitOps
+Access ArgoCD interface:
+```bash
+kubectl get svc -n argocd  
+# Open LoadBalancer EXTERNAL-IP in browser
 
+# Get admin password
+kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath={.data.password} | base64 -d
+# Username: admin
+```
+
+### Grafana Monitoring
+Access Grafana dashboard:
+```bash
+kubectl get svc -n monitoring
+# Open LoadBalancer EXTERNAL-IP in browser
+
+# Get admin password
+kubectl get secret --namespace monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
+# Username: admin
+```
+
+## 📸 Infrastructure Screenshots
+
+Here are the screenshots of all deployed components in action:
+
+### Jenkins CI/CD Pipeline
+![Jenkins](assets/jenkins.png)
+*Jenkins CI/CD dashboard with automated pipelines for Django application deployment*
+
+### ArgoCD GitOps
+![ArgoCD](assets/argocd.png)
+*ArgoCD GitOps tool managing Kubernetes deployments with automatic synchronization*
+
+### Grafana Monitoring Dashboard
+![Grafana](assets/grafana.png)
+*Grafana monitoring dashboard showing cluster metrics, resource usage, and application performance*
+
+### Django Application
+![Django App](assets/djangoapp.png)
+*Django application running successfully on Kubernetes cluster*
+
+## 🔍 Monitoring and Debugging
+
+### Check Cluster Status
+```bash
+kubectl get nodes
+kubectl get pods --all-namespaces
+kubectl get services --all-namespaces
+```
+
+### View Logs
+```bash
+kubectl logs -f deployment/django-simple
+kubectl logs -f -n jenkins deployment/jenkins
+kubectl logs -f -n argocd deployment/argocd-server
+```
+
+### Terraform Outputs
 ```bash
 terraform output
 ```
----
 
+## 🧹 Cleanup
 
-## Deploying an Application with Kubernetes and Helm
-
-Before you begin, please make sure the following tools are installed:
-- Install [kubectl](https://kubernetes.io/docs/tasks/tools/)
-- Install [helm](https://helm.sh/docs/intro/install/)
-
-Get access to EKS cluster
+### Remove Application
 ```bash
-aws eks update-kubeconfig --region <region> --name <cluster_name>
+kubectl delete deployment django-simple
+kubectl delete service django-simple
 ```
 
-## Building and pushing a Docker image to ECR repository
-
-Authenticate Docker with ECR
-```bash
-aws ecr get-login-password --region <your-region> | docker login --username AWS --password-stdin <your-account-id>.dkr.ecr.<your-region>.amazonaws.com
-```
-
-Build the Docker image
-```bash
-docker build -t <your-ecr-repo-name> ./docker
-```
-Tag the image
-```bash
-docker tag <your-ecr-repo-name>:latest <your-account-id>.dkr.ecr.<your-region>.amazonaws.com/<your-ecr-repo-name>:latest
-```
-Push the image to the ECR repository
-```bash
-docker push <your-account-id>.dkr.ecr.<your-region>.amazonaws.com/<your-ecr-repo-name>:latest
-```
-
-## Deploy Application using Helm
-
-Navigate to the `helm charts` folder:
-```bash
-cd charts/django-app
-```
-
-Install the Helm release
-```bash
-helm install <your-app-name> .
-```
-
-Upgrade the Helm release
-```bash
-helm upgrade <your-app-name> .
-```
-
-## Accessing the Application
-
-Find the LoadBalancer address (EXTERNAL-IP)
-```bash
-kubectl get svc
-```
-
-Open the EXTERNAL-IP in your browser
-```bash
-http://<external-dns>
-```
-
-![Django](assets/django.jpg)
-
-## Checking the Deployment
-
-List all Kubernetes resources
-```bash
-kubectl get all
-```
-
-Check the logs of the pods
-```bash
-kubectl logs -f <pod_name>
-```
-## Jenkins CI module
-
-Find the Jenkins LoadBalancer address (EXTERNAL-IP)
-```bash
-kubectl get svc -n jenkins
-```
-Open the Jenkins EXTERNAL-IP in your browser
-```bash
-http://<external-dns>
-```
-To get the password, run the command and copy the result (login is `admin`)
-```bash
-kubectl get secret jenkins -n jenkins -o jsonpath="{.data.jenkins-admin-password}" | base64 --decode && echo
-```
-![Jenkins](assets/jenkins.jpg)
-
-After logging into Jenkins you will see the seed-job on the main Dashboard page. 
-* Go to the seed-job pipeline and click on Build now 
-* For the first run you need to approve the script, for this go to Dashboard -> Manage Jenkins -> In-process Script Approval and approve the seed-job 
-* As a result of executing the seed-job the goit-django-docker pipeline should be created
-
-In order for the goit-django-docker pipeline to be executed with each push to the django/ project directory, you need to configure the GitHub Webhook \
-To do this, in your Github project, go to `Settings -> Webhooks -> Add Webhooks` \
-As a Payload URL, specify the following address
-```bash
-http://<jenkins-external-dns>/github-webhook/
-```
-Content type specify `application/json`
-
-In order for the pipeline not to be launched with a push that Argo CD makes, you need to go to
-Manage Jenkins -> Plugins in the Jenkins interface and install the `SCM Skip` plugin
-
----
-
-## Argo CD module
-
-Find the ArgoCD LoadBalancer address (EXTERNAL-IP)
-```bash
-kubectl get svc -n argocd
-```
-Open the ArgoCD EXTERNAL-IP in your browser
-```bash
-http://<external-dns>
-```
-
-To get the password, run the command and copy the result (login is `admin`)
-```bash
-kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath={.data.password} | base64 -d
-```
-![ArgoCD](assets/argocd.jpg)
-
-After logging in, the app should be in Healthy status.
-
----
-
-## RDS / Aurora Module
-
-This module allows you to create both a regular RDS database (PostgreSQL / MySQL) and an Aurora cluster (Aurora PostgreSQL / Aurora MySQL), as well as:
-
-After running terraform apply the endpoint is available in the outputs variable rds_endpoint. 
-
-```bash
-terraform output rds_endpoint
-```
-
-Example of connecting to the database:
-
-```bash
-psql --host=<your_rds_endpoint> \
-     --port=5432 \
-     --username=mydbuser \
-     --dbname=mydatabase
-```
-
-
-## Variables Explained
-| Variable               | Type           | Description                              |
-|------------------------|----------------|------------------------------------------|
-| `name`                 | `string`       | Name for the DB instance or Aurora сluster          |
-| `use_aurora`           | `bool`         | Enables Aurora cluster if true           |
-| `engine`               | `string`       | Engine type, e.g., `postgres` or `mysql` |
-| `db_name`              | `string`       | Name of the default database             |
-| `username`             | `string`       | Master DB username                       |
-| `password`             | `string`       | Master DB password (sensitive)           |
-| `allocated_storage`    | `number`       | Size in GB (for RDS only)                |
-| `parameter_group_family_rds` | `string` | Family for RDS Parameter Group           |
-| `aurora_instance_count`|`number`|Number of Aurora DB instances (1 = writer only)|
-| `instance_class`       | `string`       | Instance size (e.g., db.t3.micro, db.t3.medium)          |
-| `port`             | `number`       | Port used by the DB (5432 for PostgreSQL)                       |
-| `vpc_id`              | `string`       | ID of the VPC where the DB should be provisioned             |
-| `subnet_private_ids`      | `list(string)` | Private subnets to use for subnet group                                  |
-| `subnet_public_ids`       | `list(string)` | Public subnets (used if `publicly_accessible = true`)                    |
-| `publicly_accessible`     | `bool`        | Whether the DB is publicly available over the internet                   |
-| `multi_az`                | `bool`        | If true, deploys standby instance in another AZ (for standard RDS)       |
-| `backup_retention_period`| `number`      | Number of days to retain backups                                         |
-| `parameters`             | `map(string)` | Parameter overrides for parameter group                                  |
-| `tags`                   | `map(string)` | Optional tags for all resources                                          |
-
-
-## How to Change Engine Type / Deployment Mode
-
-### Standard PostgreSQL on RDS
-
-```hcl
-use_aurora                 = false
-engine                    = "postgres"
-engine_version            = "15.4"
-parameter_group_family_rds = "postgres15"
-```
-
-### MySQL
-```hcl
-use_aurora                 = false
-engine                    = "mysql"
-engine_version            = "8.0"
-parameter_group_family_rds = "mysql8.0"
-```
-
-### Aurora PostgreSQL
-```hcl
-use_aurora             = true
-engine_cluster             = "aurora-postgresql"
-engine_version_cluster     = "15.3"
-parameter_group_family_aurora = "aurora-postgresql15"
-```
-
-![Aurora](assets/aurora.jpg)
-
-
----
-
-## Monitoring module
-
-Module automatically installs Prometheus and Grafana in the EKS cluster \
-\
-You can check the deployment:
-```bash
-kubectl get all -n monitoring
-```
-Find out the name of the Prometheus service (default is `kube-prometheus-stack-prometheus`)
-```bash
-terraform output prometheus_service_name 
-```
-Access the Prometheus interface on localhost via port forwarding
-```bash
-kubectl port-forward -n monitoring svc/<prometheus_service_name> 9090:80
-```
-Then open in browser
-```bash
-http://localhost:9090
-```
-![Prometheus](assets/prometheus.jpg)
-
-
-Find out the name of the Grafana service (default is `kube-prometheus-stack-grafana`)
-```bash
-terraform output grafana_service_name
-```
-To get the password, run the command and copy the result (login is `admin`)
-```bash
-kubectl get secret --namespace monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
-```
-Find the Grafana LoadBalancer address (EXTERNAL-IP)
-```bash
-kubectl get svc -n monitoring
-```
-Open the Grafana EXTERNAL-IP in your browser
-```bash
-http://<external-dns>
-```
-
-![Grafana](assets/grafana.jpg)
-
----
-
-## Removing Resources
-
-Check the Helm release name (e.g., django-app):
-
-```bash
-helm list
-```
-
-Uninstall the Helm release
-
-```bash
-helm uninstall <your-app-name>
-```
-
-## Destroying the Infrastructure
-
-If you need to remove the infrastructure created with Terraform
-
+### Destroy Infrastructure
 ```bash
 terraform destroy
 ```
-To completely clean up cached files, you can run:
 
+### Clean Local Files
 ```bash
-rm -rf .terraform .terraform.lock.hcl terraform.tfstate terraform.tfstate.backup
+rm -rf .terraform .terraform.lock.hcl terraform.tfstate*
 ```
+
+## 📋 Project Summary
+
+This project demonstrates:
+- ✅ **Infrastructure as Code** with Terraform
+- ✅ **Container Orchestration** with EKS/Kubernetes  
+- ✅ **CI/CD Pipeline** with Jenkins
+- ✅ **GitOps Deployment** with ArgoCD
+- ✅ **Monitoring Stack** with Prometheus/Grafana
+- ✅ **Custom Application** deployment (Django)
+- ✅ **AWS Integration** (ECR, EKS, VPC, S3)
+
+Total resources deployed: ~40+ AWS resources including EKS cluster, VPC, ECR, Load Balancers, and monitoring stack.
+
+---
+
+**⚠️ Cost Warning**: This infrastructure includes multiple AWS resources (EKS nodes, Load Balancers, etc.). Remember to run `terraform destroy` when done to avoid charges.
